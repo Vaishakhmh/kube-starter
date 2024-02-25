@@ -1,0 +1,32 @@
+version: "2"
+
+services:
+  todo-postgres:
+    container_name: todo_postgres
+    build:
+      context: ./todo-postgres
+    image: todo-postgres:1.0
+    environment:
+      - POSTGRES_USER= todo
+      - POSTGRES_PASSWORD= todo1234
+      - POSTGRES_DB= todo
+    volumes:
+      - postgres-data-latest:/var/lib/postgresql/data
+  todo-storage-service:
+    container_name: todo-storage-service
+    build:
+      context: ./todo-storage-service
+      dockerfile: Dockerfile.dev
+    image: todo-storage-service:1.0
+    ports:
+      - 3000:3000
+    environment:
+      - POSTGRES_HOST=todo-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=todo
+      - POSTGRES_USER=todo
+      - POSTGRES_PASSWORD=todo1234
+    depends_on:
+      - todo-postgres
+volumes:
+  postgres-data-latest:
