@@ -17,6 +17,7 @@ console.log(
   envProps.postgresHost,
   envProps.postgresPassword
 );
+
 // Postgres Client Setup ///////////////////////////////////////////////////////////////////////////////////////////////
 const postgresClient = new Pool({
   host: envProps.postgresHost,
@@ -35,29 +36,33 @@ app.route("/api/v1/todos").get(async (req, res) => {
   console.log("CALLED GET api/v1/todos");
 
   res.setHeader("Content-Type", "application/json");
+  try {
+    postgresClient.connect((err, client) => {
+      if (err) {
+        console.log("Could not connect to Postgres when getAllTodos: " + err);
 
-  postgresClient.connect((err, client) => {
-    if (err) {
-      console.log("Could not connect to Postgres when getAllTodos: " + err);
+        res.send([]);
+      } else {
+        console.log("Postgres client connected when getAllTodos");
 
-      res.send([]);
-    } else {
-      console.log("Postgres client connected when getAllTodos");
+        client.query("SELECT title FROM todo", (error, todoRows) => {
+          if (error) {
+            throw error;
+          }
+          todos = todoRows.rows; // [{"title":"Get kids from school"},{"title":"Take out the trash"},{"title":"Go shopping"}]
 
-      client.query("SELECT title FROM todo", (error, todoRows) => {
-        if (error) {
-          throw error;
-        }
-        todos = todoRows.rows; // [{"title":"Get kids from school"},{"title":"Take out the trash"},{"title":"Go shopping"}]
+          console.log(
+            "Got todos from PostgreSQL database (" + todos.length + ")"
+          );
 
-        console.log(
-          "Got todos from PostgreSQL database (" + todos.length + ")"
-        );
-
-        res.send(todos);
-      });
-    }
-  });
+          res.send(todos);
+        });
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    res.send();
+  }
 });
 
 // Start the server ////////////////////////////////////////////////////////////////////////////////////////////////////
